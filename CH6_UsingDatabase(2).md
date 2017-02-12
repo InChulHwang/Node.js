@@ -183,3 +183,110 @@ app.post('/process/listuser', function(req, res) {
 </body>
 </html>
 ```
+
+> 이로써 사용자 정보를 우리도 어느 정도 관리를 할 수 있게 되었다!
+
+# § 비밀번호 암호화하여 저장하기
+
+> 우리가 자주 쓰는 비밀번호를 그냥 저장하면 노출되기 쉽다.
+
+> 그렇다면 이 비밀번호를 암호화하려면 어떻게 해야할까?
+
+> Mongoose를 사용하면 비밀번호를 암호화하여 저장을 할 수 있도록 구현할 수 있다!
+
+## virtual 함수 사용하기
+
+> 실무에서는 사용자 정보를 데이터베이스에 저장할 때 비밀번호를 암호화하여 저장하는 경우가 많다.
+
+> 이 때 비밀번호는 단방향 암호화하여 원본 비밀번호 문자열을 알 수 없도록 만든다.
+
+> ＊ 단방향 암호화 : Encryption만 가능, Decryption 불가능
+
+> ＊ 양방향 암호화 : Encrpytion 및 Decryption 가능
+
+> mongoose에서 제공하는 virtual() 함수를 사용하면 비밀번호 암호화 과정이 더 쉽게 처리가 가능하다.
+
+> mongoose에서 쓰이는 virtual() 함수의 특징은 문서 객체에 실제로 저장되는 속성이 아니라 가상의 속성을 지정할 수 있다는 점이다.
+
+> 예를 들어 비밀번호를 저장하기 위해 문서 객체에 만들어지는 속성 이름이 hashed_password 라고 하면,
+
+> 실제로 저장되는 속성은 아니지만 password 속성을 만든 후 이 속성에 값을 넣어 저장할 때 hashed_password 속성으로 저장되도록 만들 수 있다.
+
+## 스키마 객체의 virtual() 함수 사용법
+
+【virtual_test1.js】
+
+```shell
+
+// 모듈 불러들이기 //
+
+var mongodb = require('mongodb');
+var mongoose = require('mongoose');
+
+// 데이터베이스 연결 //
+
+var database;
+var UserSchema;
+var UserModel;
+
+// 데이터베이스 연결 후 응답 객체의 속성으로 db 객체 추가
+function connectDB() {
+  // 데이터베이스 연결 정보
+  var databaseUrl = 'mongodb://localhost:27017/shopping';
+  
+  // 데이터베이스 연결
+  mongoose.connect(databaseUrl);
+  database = mongoose.connection;
+  
+  database.on('error', console.error.bind(console, 'mongoose connection error.'));
+  database.on('open', function() {
+    console.log('데이터베이스에 연결되었습니다. : ' + databaseUrl);
+    
+    // user 스키마 및 모델 객체 생성
+    createUserSchema();
+    
+    // test
+    doTest();
+    
+  });
+  database.on('disconnected', connectDB);
+}
+
+```
+
+【virtual_test1.js (cont'd)】
+```shell
+...
+// user 스키마 및 모델 객체 생성
+function createUserSchema() {
+
+  // 스키마 정의
+  // password를 hashed_password로 변경, default 속성 모두 추가, salt 속성 추가
+  UserSchema = mongoose.Schema({
+    id : {type : String, required : true, unique : true},
+    name : {type : String, index : 'hashed', 'default' : ''},
+    age : {type : Number, 'default' : -1},
+    created_at : {type : Date, index : {unique : false}, 'default' : Date.now},
+    updated_at : {type : Date, index : {unique : false}, 'default' : Date.now}
+  });
+  
+  // info를 virtual 메소드로 정의
+  UserSchema
+    .virtual('info')
+    .set(function(info) {
+      var splitted = info.split(' ');
+      this.id = splitted[0];
+      this.name = splitted[1];
+      console.log('virtual info 설정함 : %s %s', this.id,, this.name);
+    })
+    .get(function() {return this.id + ' ' + this.name});
+    
+  console.log('UserSchema 정의함.');
+  
+  // UserModel 모델 정의
+  UserModel = mongoose.model("users4", UserSchema);
+  console.log('UserModel 정의함.');
+}
+
+```
+
