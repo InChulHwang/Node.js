@@ -290,3 +290,5 @@ function createUserSchema() {
 
 ```
 
+> split() : 전달된 파라미터를 띄어쓰기 기호로 분리
+
