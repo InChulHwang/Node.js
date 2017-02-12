@@ -121,3 +121,65 @@ var authUser = function(database, id, password, callback) {
 【app4.js (cont'd)】
 
 ```shell
+...
+
+// User List Function
+app.post('/process/listuser', function(req, res) {
+  console.log('/process/listuser 호출됨.');
+  
+  if(database) {
+    // 1. 모든 사용자 검색
+    UserModel.findAll(function(err, results) {
+      if(err) {
+        callback(err, null);
+        return;
+       }
+       
+       if(results) {
+        console.dir(results);
+        
+        res.writeHead('200', {'Content-Type' : 'text/html;charset=utf8'});
+        res.write('<h2>사용자 리스트</h2>');
+        res.write('<div><ul>');
+        
+        for(var i = 0; i < results.length; i++) {
+          var curId = results[i]._doc.id;
+          var curName = results[i]._doc.name;
+          res.write('   <li>#' + i + ' : ' + curId + ' , ' + curName + '</li>');
+        }
+        
+        res.write('</ul></div>');
+        res.end();
+      } else {
+        res.writeHead('200', {'Content-Type' : 'text/html;charset=utf8'});
+        res.write('<h2>사용자 리스트 조회 실패</h2>');
+        res.end();
+        }
+    });
+  }
+});
+```
+
+【/public/listuser.html】
+
+```shell
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>사용자 리스트 테스트</title>
+  </head>
+<body>
+  <h1>사용자 리스트</h1>
+  <hr>
+  <form method="post" action="/process/listuser">
+    <table>
+      <tr>
+        <td><label>아래 [전송] 버튼을 누르세요.</label></td>
+      </tr>
+    </table>
+    <input type="submit" value="전송" name="">
+  </form>
+</body>
+</html>
+```
