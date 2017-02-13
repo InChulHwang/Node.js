@@ -324,3 +324,74 @@ function doTest() {
 
 > 아래는 findAll() 메소드 코드이다.
 
+【virtual_test1.js (cont'd)】
+```shell
+
+function findAll() {
+  UserModel.find({}, function(err, results) {
+    if(err) {throw err;}
+    
+    if(results) {
+      console.log('조회된 user 문서 객체 #0 -> id : %s, name : %s', results[0]._doc.id, results[0]._doc.name);
+    }
+  });
+}
+```
+
+> 이제 virtual_test1.js 파일을 실행시켜보자.
+
+> Robomongo를 실행시켰을 때 id와 name 속성 값이 저장되었다는 것을 확인할 수 있다.
+
+## 비밀번호 암호화 후 저장하는 코드 적용
+
+```shell
+% npm install crypto --save
+```
+
+> 우선적으로, app4.js 파일을 복사하여 app5.js로 저장하고 crypto 모듈을 설치하자.
+
+【app5.js】
+```shell
+// crypto 모듈 불러오기
+
+var crypto = require('crypto');
+
+...
+
+function connectDB() {
+
+...
+
+  database.on('open', function() {
+    console.log('데이터베이스에 연결되었습니다. : ' + databaseUrl);
+    
+    // user 스키마 및 모델 객체 생성
+    createUserSchema();
+    
+  });
+  
+  ...
+  
+}
+
+// user 스키마 및 모델 객체 생성
+function createUserSchema() {
+
+  // Define Schema
+  // from password to hashed_password, default, salt
+  
+  UserSchema = mongoose.Schema({
+    id: {type : String, required : true, unique : true, 'default' : ' '},
+    hashed_password : {type : String, required : true, 'default' : ' '},
+    salt : {type : String, required : true},
+    name : {type : String, index : 'hashed', 'default' : ' '},
+    age : {type : Number, 'default' : -1},
+    created_at : {type : Date, index : {unique : false}, 'default' : Date.now},
+    updated_at : {type : Date, index : {unique : false}, 'default' : Date.now}
+  });
+}
+```
+
+> hashed_password 속성에 비밀번호를 암호화하여 저장하고 salt 속성에는 암호화에 사용되는 salt 값을 저장한다.
+
+> 
