@@ -292,3 +292,35 @@ function createUserSchema() {
 
 > split() : 전달된 파라미터를 띄어쓰기 기호로 분리
 
+> 아래는 doTest() 함수에 대한 코드이다.
+
+【virtual_test1.js (cont'd)】
+
+```shell
+function doTest() {
+  // UserModel 인스턴스 생성
+  // id, name 속성은 할당하지 않고 info 속성만 할당
+  
+  var user = new UserModel({"info" : 'test01 소녀시대'});
+  
+  // save()로 저장
+  user.save(function(err) {
+    if(err) {throw err;}
+    
+    console.log("사용자 데이터 추가함.");
+    
+    findAll();
+  });
+  
+  console.log('info 속성에 값 할당함.');
+  console.log('id : %s, name : %s', user.id, user.name);
+}
+
+```
+
+> new 연산자로 모델 인스턴스 객체를 생성한다.
+
+> 모델 인스턴스 객체 생성시 info 속성만 지정하며, 띄어쓰기 기호로 분리하여 저장하므로 id나 name 속성은 지정할 필요가 없다.
+
+> 아래는 findAll() 메소드 코드이다.
+
