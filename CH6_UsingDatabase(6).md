@@ -71,3 +71,278 @@ http://www.heidisql.com/download.php
 
 
 ## MySQL을 사용하는 사용자 추가 기능 만들기
+
+
+다음 단계인 3단계 : 데이터 추가 와 4단계 : 데이터 조회는 익스프레스로 만든 웹 서버에서 진행한다. 노드에서 MySQL데이터베이스에 연결하려면 mysql모듈을 사용하면 된다. 먼저 cmd창에서 모듈을 설치한다.
+
+```shell
+npm install mysql --save
+```
+
+그 후 다음 파일을 만든다.
+
+app8.js
+```shell
+
+/**
+ * 데이터베이스 사용하기
+ * 
+ * 데이터베이스 열고 로그인 화면에 붙이기
+ * 
+ */
+
+//===== 모듈 불러들이기 =====//
+var express = require('express')
+  , http = require('http')
+  , path = require('path');
+
+var bodyParser = require('body-parser');
+var cookieParser = require('cookie-parser');
+var expressSession = require('express-session');
+var expressErrorHandler = require('express-error-handler');
+
+
+//===== MySQL 데이터베이스를 사용할 수 있도록 하는 mysql 모듈 불러오기 =====//
+var mysql = require('mysql');
+
+//===== MySQL 데이터베이스 연결 설정 =====//
+var pool      =    mysql.createPool({
+    connectionLimit : 10, 
+    host     : 'localhost',
+    user     : 'root',
+    password : 'admin',
+    database : 'test',
+    debug    :  false
+});
+
+
+
+//===== Express 서버 객체 만들기 =====//
+var app = express();
+
+
+//===== 서버 변수 설정 및 static으로 public 폴더 설정  =====//
+app.set('port', process.env.PORT || 3000);
+app.use('/public', express.static(path.join(__dirname, 'public')));
+
+//===== body-parser, cookie-parser, express-session 사용 설정 =====//
+app.use(bodyParser.urlencoded({extended: true}));
+
+app.use(cookieParser());
+app.use(expressSession({
+   secret:'my key',
+   resave:true,
+   saveUninitialized:true
+}));
+
+//===== 라우터 미들웨어 사용 =====//
+
+
+//사용자 추가 함수
+app.post('/process/adduser', function(req, res) {
+   console.log('/process/adduser 호출됨.');
+
+   var paramId = req.param('id');
+   var paramName = req.param('name');
+   var paramAge = req.param('age');
+   var paramPassword = req.param('password');
+   
+   if (당구) {
+      addUser(paramId, paramName, paramAge, paramPassword, function(err, result) {
+         if (err) {throw err;}
+         
+         if (result) {
+            console.dir(result);
+
+            console.log('inserted ' + result.affectedRows + ' rows');
+              
+              var insertId = result.insertId;
+              console.log('추가한 레코드의 아이디 : ' + insertId);
+              
+            res.writeHead('200', {'Content-Type':'text/html;charset=utf8'});
+            res.write('<h2>사용자 추가 성공</h2>');
+            res.end();
+         } else {
+            res.writeHead('200', {'Content-Type':'text/html;charset=utf8'});
+            res.write('<h2>사용자 추가  실패</h2>');
+            res.end();
+         }
+      });
+   } else {
+      res.writeHead('200', {'Content-Type':'text/html;charset=utf8'});
+      res.write('<h2>데이터베이스 연결 실패</h2>');
+      res.end();
+   }
+   
+});
+
+//사용자를 등록하는 함수
+var addUser = function(id, name, age, password, callback) {
+   console.log('addUser 호출됨.');
+   
+   // 커넥션 풀에서 연결 객체를 가져옵니다.
+   pool.getConnection(function(err, conn) {
+        if (err) {
+           conn.release();  // 반드시 해제해야 합니다.
+          return;
+        }   
+        console.log('데이터베이스 연결 스레드 아이디 : ' + conn.threadId);
+
+       // 데이터를 객체로 만듭니다.
+       var data = {id:id, name:name, age:age, password:password};
+       
+        // SQL 문을 실행합니다.
+        var exec = conn.query('insert into users set ?', data, function(err, result) {
+           conn.release();  // 반드시 해제해야 합니다.
+           console.log('실행 대상 SQL : ' + exec.sql);
+           
+           if (err) {
+              console.log('SQL 실행 시 에러 발생함.');
+              console.dir(err);
+              
+              callback(err, null);
+              
+              return;
+           }
+           
+           callback(null, result);
+           
+        });
+        
+        conn.on('error', function(err) {      
+              console.log('데이터베이스 연결 시 에러 발생함.');
+              console.dir(err);
+              
+              callback(err, null);
+        });
+    });
+   
+}
+
+
+
+// 로그인 처리 함수
+app.post('/process/login', function(req, res) {
+   console.log('/process/login 호출됨.');
+
+   var paramId = req.param('id');
+   var paramPassword = req.param('password');
+   
+   if (당구) {
+      authUser(paramId, paramPassword, function(err, rows) {
+         if (err) {throw err;}
+         
+         if (rows) {
+            console.dir(rows);
+
+            var username = rows[0].name;
+            
+            res.writeHead('200', {'Content-Type':'text/html;charset=utf8'});
+            res.write('<h1>로그인 성공</h1>');
+            res.write('<div><p>사용자 아이디 : ' + paramId + '</p></div>');
+            res.write('<div><p>사용자 이름 : ' + username + '</p></div>');
+            res.write("<br><br><a href='/public/login2.html'>다시 로그인하기</a>");
+            res.end();
+         
+         } else {
+            res.writeHead('200', {'Content-Type':'text/html;charset=utf8'});
+            res.write('<h1>로그인  실패</h1>');
+            res.write('<div><p>아이디와 패스워드를 다시 확인하십시오.</p></div>');
+            res.write("<br><br><a href='/public/login2.html'>다시 로그인하기</a>");
+            res.end();
+         }
+      });
+   } else {
+      res.writeHead('200', {'Content-Type':'text/html;charset=utf8'});
+      res.write('<h2>데이터베이스 연결 실패</h2>');
+      res.write('<div><p>데이터베이스에 연결하지 못했습니다.</p></div>');
+      res.end();
+   }
+   
+});
+
+
+// 사용자를 인증하는 함수
+var authUser = function(id, password, callback) {
+   console.log('authUser 호출됨.');
+   
+   // 커넥션 풀에서 연결 객체를 가져옵니다.
+   pool.getConnection(function(err, conn) {
+        if (err) {
+           conn.release();  // 반드시 해제해야 합니다.
+          return;
+        }   
+        console.log('데이터베이스 연결 스레드 아이디 : ' + conn.threadId);
+          
+        var columns = ['id', 'name', 'age'];
+        var tablename = 'users';
+ 
+        // SQL 문을 실행합니다.
+        var exec = conn.query("select ?? from ?? where id = ? and password = ?", [columns, tablename, id, password], function(err, rows) {
+            conn.release();  // 반드시 해제해야 합니다.
+            console.log('실행 대상 SQL : ' + exec.sql);
+            
+            if (rows.length > 0) {
+              console.log('아이디 [%s], 패스워드 [%s] 가 일치하는 사용자 찾음.', id, password);
+              callback(null, rows);
+            } else {
+               console.log("일치하는 사용자를 찾지 못함.");
+              callback(null, null);
+            }
+        });
+
+        conn.on('error', function(err) {      
+            console.log('데이터베이스 연결 시 에러 발생함.');
+            console.dir(err);
+            
+            callback(err, null);
+      });
+    });
+   
+}
+
+
+//===== 404 에러 페이지 처리 =====//
+var errorHandler = expressErrorHandler({
+ static: {
+   '404': './public/404.html'
+ }
+});
+
+app.use( expressErrorHandler.httpError(404) );
+app.use( errorHandler );
+
+
+//===== 서버 시작 =====//
+http.createServer(app).listen(app.get('port'), function(){
+  console.log('서버가 시작되었습니다. 포트 : ' + app.get('port'));
+});
+```
+
+이 코드는 몽고디비에 연결할 때 사용한 app.js파일에서 몽고디비를 연결할 때 추가한 코드를 모두 삭제 한 후 수정한 것 이다. 
+
+[20~31] 코드 윗부분에 myql모듈을 불러오는 코드를 추가한 후 그 아래에 MySQL데이터베이스에 연결하는 코드를 추가한다.
+
+관계형 데이터베이스에 연결할 때는 보통 커넥션 풀(Connextion Poll)을 사용한다. 이것은 데이터베이스 연결 객체가 너무 많이 만들어지는 것을 막고 한번 만든 연결을 다시 사용할 수 있게 한다. 데이터베이스에 연결하면 메모리 리소스를 많이 차지하므로 한번 만든 연결 객체는 커넥션 풀에 넣어 두고 다음번 요청이 있을 때 다시 사용한다. 이때 너무 많은 연결이 만들어지지 않도록 커넥션 풀의 최대 크기를 설정한다. 커넥션 풀은 연결 개수를 제한하므로 연결을 사용한 후에는 반드시 다시 풀어주어야 하는 제약이 있다. 커넥션 풀을 만들려면 mysql모듈의 createPool메소드를 호출해서 옵션 정보가 있는 객체를 넣어 준다. 객체 안에는 connectionLimit, host, port등의 연결 정보가 속성으로 들어간다.
+
+속성 | 설명 
+-----:|:-----
+connectionLimit | 커넥션 풀에서 만들 수 있는 최대 연결 개수를 설정한다.
+host | 연결할 호스트 이름을 설정한다. 내 컴퓨터인 경우 localhost또는 127.0.0.1을 입력할 수 있다.
+port | 데이터베이스가 사용하는 포트 번호를 설정한다. MySQL의 디폴트 포트는 3306이다.
+user | 데이터베이스 사용자 아이디를 설정한다. MySQL에서 루트 권한을 가진 디폴트 사용자 아이디는 root이다.
+password | 데이터베이스 사용자의 비밀번호를 설정한다.
+databse | 데이터베이스 이름을 설정한다.
+debug | 데이터베이스 처리 과정을 로그로 남길 것인지 설정한다.
+
+createPool 메소드를 호출하면 데이터베이스에 연결해서 커넥션 풀을 만들게 된다. 따라서 그 다음부터는 pool객체에서 연결 객체를 가져와 사용할 수 있다.
+
+[94~135] MySQL데이터베이스에 연결하는 과정이 끝났으니 사용자 추가 기능을 넣어보자. 
+
+addUser함수에는 다섯 개의 파라미터를 전달한다. id, name, age, password 파라미터는 웹 브라우저에서 요청할 때 전달한 요청 파라미터이며 callback은 결과를 처리할 콜백 함수이다. pool객체의 getConnection 메소드를 호출하면 커넥션 풀에서 연결 객체를 하나 가져올 수 있다. 연결 객체를 성공적으로 가져오면 콜백 함수가 호출되면서 conn파라미터로 연결 객체가 전달된다. 연결 객체에는 query메소드가 있어 SQL문을 실행할 수 있다. 여기에서는 데이터를 추가하는 INSERT 문을 사용했다. SQL문을 만들어 실행할 때는 SQL문 안에 ? 기호를 넣을 수 있는 이 기호는 query메소드를 호출할 때 전달하는 추가 파라미터를 사용해 대체한 후 실행된다. 즉, data변수에 {id : id , name : name , age : age , password : password } 객체를 할당한 후 query메소드를 호출하면서 파라미터로 전달하면 SQL문은 다음과 같은 형태로 만들어 진 후 실행된다.
+
+```shell
+insert into users set id='test01', name='김준수',age=20, password='123456'
+```
+
+SQL문이 실행되면 콜백 함수가 호출되면서 결과가 result파라미터로 전달된다. SQL문을 실행한 후에는 연결 객체의 release메소드를 호출하여 연결 객체를 커넥션 풀로 반환해야 한다. 실행 결과는 콜백 함수 쪽에서 처리할 수 있도록 callback(null,result)코드를 넣어 콜백 함수를 실행한다.
