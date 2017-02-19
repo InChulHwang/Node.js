@@ -9,6 +9,8 @@
 
 가장 기본적인 모듈 사용 방법은 자바스크립트 파일을 새로 만드는 것부터 출발한다. 그리고 그 파일 안에서 exports 전역 변수를 사용한다. [p283 사진]
 
+![283](https://github.com/SKKUMathcom/Node.js/blob/master/image/283.png)
+
 exports 전역 변수는 어디에서나 접근할 수 있게 정의된 것 이고 속성도 추가할 수 있다. 즉, 새로운 파일을 만들고 그 안에서 exports전역 변수에 속성을 추가하면 다른 파일에서도 exports전역 변수의 속성을 참조할 수 있다. 예를들어, 사용자 정보를 확인하려고 만든 기능을 별도의 user1.js 자바스크립트 파일로 분리한 후 모듈로 구성하려면 getUser()함수와 group객체를 exports의 속성으로 추가해야 한다. 이렇게 만든 모듈은 module_test1.js처럼 이 모듈을 사용할 파일에서 require()메소드로 불러들일 수 있다. require()메소드로 불러들인 모듈을 변수에 할당하면 그 변수에는 exports가 속성으로 할당된다. 따라서 속성이 할당된 변수에서는 exports에 추가한 getUser()함수나 group객체를 참조하여 사용할 수 있다.
 
 위와 같은 구조를 만들기 위해 먼저 새로운 프로젝트 ModuleExample을 만든 후 user1.js 파일과 module_test1.js 파일을 만들자. 
@@ -161,6 +163,8 @@ console.log('사용자 정보 : %s', showUser());
 
 module_test3.js 코드는 module_test1.js파일의 코드와 같으며 require()메소드에 전달되는 파일 이름만 ./user3로 변경되었다. 이 파일을 실행하면 module_test1.js파일을 실행했을 때와 똑같은 결과가 콘솔 창에 표시된다. 모듈을 만들 때 module.exports에 객체를 그대로 할당하는 방식으로 맏르었다는 점과 이 모듈을 require()메소드로 불러들이면 그 객체가 그대로 반환된다는 점을 잘 이해하자. [p288 사진]
 
+![288](https://github.com/SKKUMathcom/Node.js/blob/master/image/288.png)
+
 exports에 객체를 그대로 할당하면 모듈 파일을 불려들인 쪽에서 그 객체를 참조할 수 없지만, module.exports에 객체를 그대로 할당하면 모듈 파일 안에서 할당한 객체를 참조할 수 있다. 이 때문에 아무런 오류가 발생하지 않는다.
 
 
@@ -207,6 +211,8 @@ console.log('사용자 정보 : %s', showUser());
 require()메소드를 호출하면 모듈 파일 안에서 module.exports에 할당한 익명 함수가 반환된다. 따라서 이 익명 함수를 user변수에 할당했다면 user()와 같이 소괄호를 붙여 함수를 실행할 수 있다. showUser()함수 안에서 suer변수에 할당한 함수를 실행하면 id와 name속성을 가진 객체가 반환되므로 그 객체의 name속성을 참조할 수 있다. 
 
 module_test4.js를 실행하면 콘솔에서 확인할 수 있는 것처럼, 모듈 파일 안에서 module.exports에 함수를 할당하면 모듈을 불러들인 쪽에서 그 함수를 그대로 참조할 수 있다. 따라서 반환된 함수에 소괄호만 붙여 주면 함수를 그대로 실행할 수 있다. user변수에 할당된 함수를 실행하면 사용자 정보가 들어 있는 객체가 반환되므로 그 객체의 name속성을 사용할 수 있다. [p290 사진]
+
+![290](https://github.com/SKKUMathcom/Node.js/blob/master/image/290.png)
 
 
 ## exports와 module.exports를 함께 사용하기
@@ -303,6 +309,8 @@ console.log('사용자 정보 : %s', showUser());
 
 책의 p293의 사진은 모듈 파일을 만들어 불러들이는 경우와 조금 전 직접 만든 코드를 비교해서 보여준다.
 
+![293](https://github.com/SKKUMathcom/Node.js/blob/master/image/293.png)
+
 별도의 모듈 파일로 분리하면 module.exports에 객체를 할당해야 하고 이 모듈 파일을 require()메소드로 불러와서 변수에 할당하는 과정이 추가된다. 그러나 exports를 사용하지 않고 module.exports에 객체를 할당하는 방식으로만 모듈을 구성한다면, 모듈을 분리하는 과정이 생각보다 복잡하지는 않다.
 
 
@@ -363,6 +371,8 @@ require('./user7').printUser;
 ```
 exports가 아닌 exports의 printUser 속성을 변수에 할당하였다. 여기에서 printUser속성이 함수이므로 함수를 실행하려면 printUser()처럼 변수 이름 뒤에 소괄호를 붙여준다. [p295 사진]
 
+![295](https://github.com/SKKUMathcom/Node.js/blob/master/image/295.png)
+
 module.exports 에는 객체를 직접 할당할 수 있으므로 exports가 아니라 module.exports에 객체를 할당하고 그 안에 다시 함수를 속성으로 추가하는 경우에도 모듈을 불러와 사용하는 쪽의 코드 패턴은 위 사진의 구조와 같다.
 
 
@@ -421,6 +431,8 @@ user.printUser();
 ```
 
 require()메소드를 사용하여 user8.js파일에 정의된 모듈을 불러오면 new User()로 만든 인스턴스 객체가 반환된다. User의 인스턴스 객체에는 printUser()메소드가 추가되어 있으므로 user.printUser()와 같은 형태로 메소드를 호출할 수 있다. [p296 사진]
+
+![296](https://github.com/SKKUMathcom/Node.js/blob/master/image/296.png)
 
 그런데 모듈을 만들 때 exports객체의 속성으로 인스턴스 객체를 추가했다면 이 객체를 어떻게 사용할까? 모듈의 속성으로 exports에 인스턴스 객체를 추가한 경우에는 모듈을 불러들이는 쪽에서 require()메소드를 호출한 후 반환되는 객체 속성으로 인스턴스 객체를 참조할 수 있다.
 
@@ -522,6 +534,8 @@ user.printUser();
 ```
 
 require()메소드를 호출하여 모듈을 불러들이면 User객체가 반환된다. 프로토타입 객체로 만든 User객체를 참조했으므로 new연산자를 사용해 인스턴스 객체를 만든 후 그 안에 정의된 함수를 호출할 수 있다. [p298 사진]
+
+![298](https://github.com/SKKUMathcom/Node.js/blob/master/image/298.png)
 
 이 코드 패턴도 모듈 안에서 module.exports에 객체를 할당하는 방식 대신 exports객체에 속성을 추가한 후 프로토타입 객체를 할당하는 방식을 사용할 수 있다. 
 
