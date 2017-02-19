@@ -346,3 +346,108 @@ insert into users set id='test01', name='김준수',age=20, password='123456'
 ```
 
 SQL문이 실행되면 콜백 함수가 호출되면서 결과가 result파라미터로 전달된다. SQL문을 실행한 후에는 연결 객체의 release메소드를 호출하여 연결 객체를 커넥션 풀로 반환해야 한다. 실행 결과는 콜백 함수 쪽에서 처리할 수 있도록 callback(null,result)코드를 넣어 콜백 함수를 실행한다.
+
+
+## 사용자 추가 요청을 처리하는 함수 만들기.
+
+[56~92] 사용자를 추가할 때 사용하는 라우팅 함수의 코드도 몽고디비를 사용할 때와 거의 비슷하다. 
+
+POST방식으로 요청된 /process/adduser패스를 처리하는 코드는 앞에서 살펴본 것과 거의 같다. 먼저 웹 브라우저로부터 id, name, age, password 파라미터를 받아 처리하도록 수정한다. 그리고 addUser함수를 실행한 결과를 확인한 후 응답을 보낸다.
+
+
+adduser2.html
+```shell
+<!DOCTYPE html>
+<html>
+   <head>
+      <meta charset="UTF-8">
+      <title>MySQL 사용자추가 테스트</title>
+   </head>
+<body>
+   <h1>MySQL 사용자추가</h1>
+   <br>
+   <form method="post" action="/process/adduser">
+      <table>
+         <tr>
+            <td><label>아이디</label></td>
+            <td><input type="text" name="id" ></td>
+         </tr>
+         <tr>
+            <td><label>사용자명</label></td>
+            <td><input type="text" name="name" ></td>
+         </tr>
+         <tr>
+            <td><label>나이</label></td>
+            <td><input type="text" name="age" ></td>
+         </tr>
+         <tr>
+            <td><label>비밀번호</label></td>
+            <td><input type="password" name="password" ></td>
+         </tr>
+      </table>
+      <input type="submit" value="전송" >
+   </form>
+</body>
+</html>
+```
+
+app8.js를 실행 한 후 다음 웹 브라우저에서 adduser2.html을 열어보자.
+
+```shell
+http://localhost:3000/public/adduser2.html
+```
+사용자를 추가 한 후 MySQL에 실제로 데이터가 추가되었는지 확인하기 위해 HeideiSQL화면에서 테이블 데이터를 조회 해 보자. 왼쪽 목록에서 test데이터베이스를 찾고 그 안에 들어있는 users 테이블을 선택한다. 그리고 오른쪽 영역에서 [데이터]탭을 클릭하면 users 테이블의 데이터가 조회된다. 
+
+데이터가 정상적으로 추가된 것을 확인 하였는가? 데이터베이스에 사용자를 추가하는 기능을 만들어 보았다. 
+
+
+
+
+## MySQL에 들어 있는 사용자 정보로 로그인하기.
+
+[180~217] 사용자가 보낸 아이디와 비밀번호를 사용해 데이터베이스 안에 일치하는 레코드가 있는지 조회하는 authUser함수를 만들어 보자.
+
+클라이언트로부터 전달받는 파라미터는 아이디와 비밀번호이다. authUser 함수는 이 두개의 파라미터와 함께 콜백 함수를 전달받는다. 그리고 그 안에서 getConnection 메소드를 사용해 커넥션 풀에서 연결 객체를 가져온다. 그 다음에는 연결 객체의 query메소드로 SQL문을 실행하는데 데이터를 조회해야 하므로 SELECT문을 사용한다. SELECT문에는 어떤 칼럼을 어떤 테이블에서 조회할지 그리고 어떤 조건으로 조회할지 등의 정보를 넣어주는데 이 세가지 정보는 객체나 변수로 만들어 전달한다. query메소드로 전달하는 첫 번째 파라미터는 SQL문이고 두 번쨰 파라미터는 배열 객체이다. 이 배열 객체는 SQL문과 데이터를 사용해 SQL문 안에 들어 있는 ?? 또는 ? 기호를 대체한 후 다음과 같은 SQL문을 만들어 낸다.
+
+```shell
+select id, name, age from users where id = 'test01' and password = '123456'
+```
+SQL문이 정상적으로 실행되면 연결 객체의 releas 메소드를 호출하여 연결 객체를 커넥션 풀로 반환 한 후 callback함수를 실행한다. 이렇게 하면 이 함수를 호출한 쪽에서 rows객체를 전달받게 된다. 
+
+[139~177] 이제 로그인 처리를 요청하는 /process/login 패스에 라우팅 함수를 추가할 때가 되었다. 다음처럼 사용자가 있는지 확인한 후 그에 맞는 응답을 보내주는 코드를 입력하자.
+
+사용자가 요청한 id와 password파라미터를 확인한 후 authUser()메소드를 호출하면서 파라미터로 전달한다. MySQL데이터베이스에서 조회한 사용자 데이터는rows파라미터에 들어 있으므로 rows객체의 첫 번째 배열 요소를 참조한 후 사용자 이름을 확인한다. login2.html파일을 만들자.
+
+```shell
+<!DOCTYPE html>
+<html>
+   <head>
+      <meta charset="UTF-8">
+      <title>MySQL 로그인 테스트</title>
+   </head>
+<body>
+   <h1>MySQL 로그인</h1>
+   <br>
+   <form method="post" action="/process/login">
+      <table>
+         <tr>
+            <td><label>아이디</label></td>
+            <td><input type="text" name="id" ></td>
+         </tr>
+         <tr>
+            <td><label>비밀번호</label></td>
+            <td><input type="password" name="password" ></td>
+         </tr>
+      </table>
+      <input type="submit" value="전송" >
+   </form>
+</body>
+</html>
+```
+
+ 이제 app8.js파일을 실행한 후 웹 브라우저에서 다음 주소로 요청한다.
+
+```shell
+http://localhost:3000/public/login2.html
+```
+사용자 로그인 화면이 나타나면 아이디 입력란에 test01, 비밀번호 입력란에 123456을 입력한 후 [전송] 버튼을 누른다. 사용자가 정상적으로 인증되면 성공 메시지와 함께 조회한 사용자 정보가 표시된다.
