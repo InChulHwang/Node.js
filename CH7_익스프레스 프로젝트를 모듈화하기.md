@@ -310,5 +310,264 @@ console.log('사용자 정보 : %s', showUser());
 
 코드 패턴 | 설명
 -----:|:-----
-함수를 할당하는 경우 | 모듈 안에서 함수를 만들어 할당한다.
-모듈을 불러온 후 소괄호를 붙여 모듈을 실행한다.
+함수를 할당하는 경우 | 모듈 안에서 함수를 만들어 할당한다. 모듈을 불러온 후 소괄호를 붙여 모듈을 실행한다.
+인스턴스 객체를 할당하는 경우 | 모듈 안에서 인스턴스 객체를 만들어 할당한다. 모듈을 불러온 후 해당 객체의 메소드를 호출하거나 속성을 사용할 수 있다.
+프로토타입 객체를 할당하는 경우 | 모듈 안에서 프로토타입 객체를 만들어 할당한다. 모듈을 불러온 후 new 연산자로 인스턴스 객체를 만들어 사용할 수 있다.
+
+모듈을 구성할 때 사용하는 세 가지 코드 패턴은 다시 exports전역 변수에 속성으로 추가하는 경우와 module.exports에 할당하는 경우로 나눌 수 있다. 다만 앞에서 설명한 것 처럼 module.exports 사용을 권장한다.
+
+## 함수를 할당하는 코드 패턴
+
+그러면 먼저 첫 번째 코드 패턴을 만들어 보겠다. 
+
+user7.js
+```shell
+/**
+ * 모듈에 대해 알아보기
+ * 
+ * 모듈 사용 패턴
+ */
+
+// 사용 패턴 : exports에 속성으로 추가된 함수 객체를 그대로 참조한 후 호출함
+
+exports.printUser = function() {
+   console.log('user 이름은 소녀시대입니다.');
+};
+```
+
+exports전역 변수에 printUser속성을 추가했으며 이 속성에 함수를 할당하였다. 이 패턴은 앞에서도 만들어 보았으므로 쉽게 이해될 것 이다. 
+
+이 묘듈 파일을 사용하는 module_test7.js를 만들자
+
+module_test7.js
+```shell
+/**
+ * 모듈에 대해 알아보기
+ * 
+ * 모듈 사용 패턴
+ */
+
+// 사용 패턴 : exports에 속성으로 추가된 함수 객체를 그대로 참조한 후 호출함
+
+var printUser = require('./user7').printUser;
+
+printUser();
+```
+
+require()메소드로 모듈을 불러들이면 exports자체가 참조된다. exports의 printUser속성이 함수이므로 모듈을 불러들이면서 그 속성을 바로 참조하면 다음과 같은 코드를 구성할 수 있다.
+
+```shell
+require('./user7').printUser;
+```
+exports가 아닌 exports의 printUser 속성을 변수에 할당하였다. 여기에서 printUser속성이 함수이므로 함수를 실행하려면 printUser()처럼 변수 이름 뒤에 소괄호를 붙여준다. [p295 사진]
+
+module.exports 에는 객체를 직접 할당할 수 있으므로 exports가 아니라 module.exports에 객체를 할당하고 그 안에 다시 함수를 속성으로 추가하는 경우에도 모듈을 불러와 사용하는 쪽의 코드 패턴은 위 사진의 구조와 같다.
+
+
+## 인스턴스 객체를 할당하는 코드 패턴
+
+두 번째 패턴은 모듈을 위해 만든 파일 안에서 인스턴스 객체를 만들어 할당한다. 먼저 인스턴스 객체를 만들어 module.exports에 직접 할당하는 예를 만들어 보겠다.
+
+user8.js
+```shell
+/**
+ * 모듈에 대해 알아보기
+ * 
+ * 모듈 사용 패턴
+ */
+
+// 사용 패턴 : module.exports에 인스턴스 객체를 만들어 할당함
+
+// 생성자 함수
+function User(id, name) {
+   this.id = id;
+   this.name = name;
+}
+
+User.prototype.getUser = function() {
+   return {id:this.id, name:this.name};
+}
+
+User.prototype.group = {id:'group1',name:'친구'};
+
+User.prototype.printUser = function() {
+   console.log('user 이름 : %s, group 이름 : %s', this.name, this.group.name);
+}
+
+module.exports = new User('test01', '소녀시대');
+```
+자바스크립트에서는 함수를 생성자로 지정하여 객체를 정의하고, 그 객체를 사용해 인스턴스 객체를 만들 수 있다. 만약 User객체를 만들고 싶다면 User라는 이름의 함수를 먼저 정의한다. 이 함수에는 id와 name속성이 파라미터로 전달되며, 이 둘을 User객체의 속성으로 만들기 위해 다음 코드를 사용한다.
+
+```shell
+this.id=id;
+```
+이렇게 하면 전달받은 파라미터가 this객체의 속성으로 추가된다. User객체의 속성으로 함수나 값을 추가하려면 User.prototype 객체에 속성으로 추가하면 된다. 이렇게 정의한 User객체에서 new 연산자를 사용하여 새로운 인스턴스를 객체를 만든 후 module.exports에 직접 할당한다. 이렇게 하면 모듈을 불러오는 쪽에서 인스턴스 객체를 바로 참조할 수 있다.
+
+module_test8.js
+```shell
+/**
+ * 모듈에 대해 알아보기
+ * 
+ * 모듈 사용 패턴
+ */
+
+// 사용 패턴 : module.exports 에 객체로부터 new 연산자로 생성된 인스턴스 객체를 할당한 후 그 인스턴스 객체의 함수 호출함
+
+var user = require('./user8');
+
+user.printUser();
+```
+
+require()메소드를 사용하여 user8.js파일에 정의된 모듈을 불러오면 new User()로 만든 인스턴스 객체가 반환된다. User의 인스턴스 객체에는 printUser()메소드가 추가되어 있으므로 user.printUser()와 같은 형태로 메소드를 호출할 수 있다. [p296 사진]
+
+그런데 모듈을 만들 때 exports객체의 속성으로 인스턴스 객체를 추가했다면 이 객체를 어떻게 사용할까? 모듈의 속성으로 exports에 인스턴스 객체를 추가한 경우에는 모듈을 불러들이는 쪽에서 require()메소드를 호출한 후 반환되는 객체 속성으로 인스턴스 객체를 참조할 수 있다.
+
+user9.js
+```shell
+/**
+ * 모듈에 대해 알아보기
+ * 
+ * 모듈 사용 패턴
+ */
+
+// 사용 패턴 : exports의 속성 이름을 주면서 추가하되 인스턴스 객체를 만들어 할당함
+
+// 생성자 함수
+function User(id, name) {
+   this.id = id;
+   this.name = name;
+}
+
+User.prototype.getUser = function() {
+   return {id:this.id, name:this.name};
+}
+
+User.prototype.group = {id:'group1',name:'친구'};
+
+User.prototype.printUser = function() {
+   console.log('user 이름 : %s, group 이름 : %s', this.name, this.group.name);
+}
+
+exports.user = new User('test01', '소녀시대');
+```
+User객체를 정의하는 코드는 user8.js와 같다. 다만 마지막에 있는 module.exports에 인스턴스 객체를 직접 할당했던 방식을 바꾸어 여기에서는 exports.user속성으로 인스턴스 객체를 추가 한다. 
+
+module_test9.js
+```shell
+/**
+ * 모듈에 대해 알아보기
+ * 
+ * 모듈 사용 패턴
+ */
+
+// 사용 패턴 : exports의 속성 이름을 주면서 추가하되 인스턴스 객체를 만들어 할당함
+
+var user = require('./user9').user;
+
+user.printUser();
+```
+require()메소드를 사용해서 user9.js에 정의한 모듈을 불러들이고, 곧바로 반환된 객체의 user속성을 참조한다. user속성은 User에서 만든 인스턴스 객체를 의미하므로 user.printUser()와 같은 코드를 사용하면 User안에 정의도니 함수를 호출할 수 있다.
+
+
+## 프로토타입 객체를 할당하는 코드 패턴
+
+세 번째 패턴은 User 객체를 새로 정의한 후 module.exprots에 직접 할당한다. 다시 말해, 앞에서 만든 User객체로 인스턴스 객체를 만든 후 module.exports에 할당하는 것이 아니라 User객체 자체를 module.exports에 할당한다. 이렇게 하면 User객체를 정의하는 부분만 별도의 모듈 파일로 분리할 수 있으니 다른ㅌ 파일에서 필요할 때마다 직접 인스턴스 객체를 만들어 사용할 수 있다는 장점이 있다. 
+
+user10.js
+```shell
+/**
+ * 모듈에 대해 알아보기
+ * 
+ * 모듈 사용 패턴
+ */
+
+// 사용 패턴 : module.exports에 프로토타입 객체를 정의한 후 할당함
+
+// 생성자 함수
+function User(id, name) {
+   this.id = id;
+   this.name = name;
+}
+
+User.prototype.getUser = function() {
+   return {id:this.id, name:this.name};
+}
+
+User.prototype.group = {id:'group1',name:'친구'};
+
+User.prototype.printUser = function() {
+   console.log('user 이름 : %s, group 이름 : %s', this.name, this.group.name);
+}
+
+module.exports = User;
+```
+모듈 파일의 나머지 부분은 user9.js와 같으며 마지막 부분에서만 module.exports에 객체 User를 직접 할당한다.
+
+module_test10.js
+```shell
+/**
+ * 모듈에 대해 알아보기
+ * 
+ * 모듈 사용 패턴
+ */
+
+// 사용 패턴 : module.exports에 프로토타입 객체를 정의한 후 할당함
+
+var User = require('./user10');
+var user = new User('test01', '소녀시대');
+
+user.printUser();
+```
+
+require()메소드를 호출하여 모듈을 불러들이면 User객체가 반환된다. 프로토타입 객체로 만든 User객체를 참조했으므로 new연산자를 사용해 인스턴스 객체를 만든 후 그 안에 정의된 함수를 호출할 수 있다. [p298 사진]
+
+이 코드 패턴도 모듈 안에서 module.exports에 객체를 할당하는 방식 대신 exports객체에 속성을 추가한 후 프로토타입 객체를 할당하는 방식을 사용할 수 있다. 
+
+
+user11.js
+```shell
+/**
+ * 모듈에 대해 알아보기
+ * 
+ * 모듈 사용 패턴
+ */
+
+// 사용 패턴 : exports의 속성 이름을 주면서 추가하되 프로토타입 객체를 정의한 후 할당함
+
+// 생성자 함수
+function User(id, name) {
+   this.id = id;
+   this.name = name;
+}
+
+User.prototype.getUser = function() {
+   return {id:this.id, name:this.name};
+}
+
+User.prototype.group = {id:'group1',name:'친구'};
+
+User.prototype.printUser = function() {
+   console.log('user 이름 : %s, group 이름 : %s', this.name, this.group.name);
+}
+
+exports.User = User;
+```
+
+module_test11.js
+```shell
+/**
+ * 모듈에 대해 알아보기
+ * 
+ * 모듈 사용 패턴
+ */
+
+// 사용 패턴 : exports의 속성 이름을 주면서 추가하되 프로토타입 객체를 정의한 후 할당함
+
+var User = require('./user11').User;
+var user = new User('test01', '소녀시대');
+
+user.printUser();
+```
+require() 메소드로 모듈을 불러왔을 때 반환되는 객체는 exports이므로 그 안에 추가한 User객체를 참조한 후 new 연산자로 인스턴스 객체를 만들 수 있다.
+
+지금까지 모듈을 정의하는 방법과 대표적인 코드 사용 패턴 몇 가지를 알아보았다. 코드 패턴이 다양해 보일 수 있지만 어떤 경우이든 별도의 모듈 파일에서 module.exports에 객체를 할당하면 된다고 생각하면 이해하기 쉽다. 그리고 module.exports에 할당한 객체나 exports에 속성으로 추가한 객체는 모듈을 불러왔을 때 그대로 참조할 수 있다는 것만 알아두면 된다. 그러면 다른 사람이 만든 모듈이더라도 쉽게 이해하고 사용할 수 있다.
